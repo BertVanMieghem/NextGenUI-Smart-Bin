@@ -20,6 +20,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import org.json.*;
+import org.json.JSONObject;
 import org.json.JSONException;
 
 import java.io.BufferedReader;
@@ -27,6 +28,7 @@ import java.io.IOException;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     String currentlySelectedList;
     String item;
     EditText productInput;
+    TextView txtJson;
     Button addButton;
     HashMap<String, List<String>> items = new HashMap<>();
 
@@ -233,7 +236,19 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void fetchFromServer() {
-        new JsonTask().execute("https://jsonplaceholder.typicode.com/todos/1");
+        new JsonTask().execute("https://jsonplaceholder.typicode.com/users/");
+    }
+
+    private void parseJsonResult(String res) {
+        try {
+            JSONArray arr = new JSONArray(res);
+//            System.out.println("JSONObject: " + obj);
+//            JSONArray arr = obj.getJSONObject("response").getJSONArray("Message");
+            for (int i = 0; i < arr.length(); i++)
+                System.out.println(arr.getJSONObject(i).get("username"));
+        } catch (JSONException e){
+            e.printStackTrace();
+        }
     }
 
 
@@ -261,9 +276,7 @@ public class MainActivity extends AppCompatActivity {
                 connection = (HttpURLConnection) url.openConnection();
                 connection.connect();
 
-
                 InputStream stream = connection.getInputStream();
-
                 reader = new BufferedReader(new InputStreamReader(stream));
 
                 StringBuffer buffer = new StringBuffer();
@@ -271,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
 
                 while ((line = reader.readLine()) != null) {
                     buffer.append(line+"\n");
-                    Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+                    Log.d("Response: ", "> " + line);
 
                 }
 
@@ -303,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
             if (pd.isShowing()){
                 pd.dismiss();
             }
-            System.out.println(result);
+            parseJsonResult(result);
         }
     }
 }

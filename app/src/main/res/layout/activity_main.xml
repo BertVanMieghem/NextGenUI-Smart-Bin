@@ -52,6 +52,15 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"></ListView>
 
+        <TextView
+            android:id="@+id/tvJsonItem"
+            android:layout_width="327dp"
+            android:layout_height="573dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/shopping_list" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
