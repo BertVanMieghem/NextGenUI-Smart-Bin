@@ -2,24 +2,27 @@
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/menuFetch"
+        android:title="@string/menu_fetch" />
+    <item
         android:id="@+id/menuViewLists"
-        android:title="View my lists..." />
+        android:title="@string/menu_view" />
     <item
         android:id="@+id/menuRename"
-        android:title="Rename list..." />
+        android:title="@string/menu_rename" />
     <item
         android:id="@+id/menuNewList"
         android:icon="@android:drawable/ic_menu_add"
-        android:title="New list"
+        android:title="@string/menu_new"
         app:showAsAction="always" />
     <item
         android:id="@+id/menuRemoveList"
         android:icon="@android:drawable/ic_menu_delete"
-        android:title="Remove list"
+        android:title="@string/menu_delete"
         app:showAsAction="always" />
     <item
         android:id="@+id/menuShareList"
         android:icon="@android:drawable/ic_menu_share"
-        android:title="Share List"
+        android:title="@string/menu_share"
         app:showAsAction="always" />
 </menu>
