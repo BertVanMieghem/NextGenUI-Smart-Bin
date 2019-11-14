@@ -295,14 +295,14 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void fetchFromServer() {
-        new JsonTask().execute("https://jsonplaceholder.typicode.com/users/");
+        new JsonTask().execute("https://jsonplaceholder.typicode.com/users/"); // TODO
     }
 
     private void parseJsonResult(String res) {
         try {
             JSONArray arr = new JSONArray(res);
             for (int i = 0; i < arr.length(); i++)
-                addItemToList(arr.getJSONObject(i).get("username").toString());
+                addItemToList(arr.getJSONObject(i).get("username").toString()); // TODO
         } catch (JSONException e){
             e.printStackTrace();
         }
