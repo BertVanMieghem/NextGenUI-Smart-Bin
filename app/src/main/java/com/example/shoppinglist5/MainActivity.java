@@ -9,18 +9,21 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.*;
-import org.json.JSONObject;
 import org.json.JSONException;
 
 import java.io.BufferedReader;
@@ -28,7 +31,6 @@ import java.io.IOException;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
     String currentlySelectedList;
     String item;
     EditText productInput;
-    TextView txtJson;
     Button addButton;
+    ListView listView;
     HashMap<String, List<String>> items = new HashMap<>();
 
 
@@ -50,17 +52,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Get reference of widgets from XML layout
+        productInput = findViewById(R.id.editText);
+        addButton = findViewById(R.id.button);
+        listView = findViewById(R.id.shopping_list);
         items.put("Shopping list 1", new ArrayList<String>());
         currentlySelectedList = getFirstListName();
+        setTitle(currentlySelectedList);
 
-        showList();
+        updateListView();
     }
+
     @Override
     public boolean onCreateOptionsMenu (Menu menu) {
         MenuInflater mi = getMenuInflater();
         mi.inflate(R.menu.actionbar1, menu);
         return true;
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId())
@@ -92,6 +102,83 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private void updateListView() {
+        // Create an ArrayAdapter from List
+        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
+        final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
+        listView.setAdapter(adapter);
+
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                item = productInput.getText().toString();
+                List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
+                ls.add(item);
+                items.put(currentlySelectedList, ls);
+                adapter.notifyDataSetChanged();
+                productInput.setText("");
+                System.out.println("updateListView [][][] items: " + items.toString());
+            }
+        });
+
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+                return showPopup(view, position);
+            }
+        });
+    }
+
+    private boolean showPopup(View view, final int position) {
+        PopupMenu popup = new PopupMenu(MainActivity.this, view);
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                switch (item.getItemId()) {
+                    case R.id.details:
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setTitle(items.get(currentlySelectedList).get(position));
+                        builder.setMessage("item details...\nDate added:\nOrigin:\n");
+
+                        builder.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+                        builder.show();
+                        break;
+                    case R.id.delete:
+                        List<String> ls = items.get(currentlySelectedList);
+                        String toRemove = ls.get(position);
+                        ls.remove(toRemove);
+                        items.put(currentlySelectedList, ls);
+                        updateListView();
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            }
+        });
+        popup.inflate(R.menu.popup);
+        popup.show();
+        return false;
+    }
+
+    private void addItemToList(String item) {
+        // Create an ArrayAdapter from List
+        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
+        final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
+        listView.setAdapter(adapter);
+
+        ls.add(item);
+        items.put(currentlySelectedList, ls);
+        adapter.notifyDataSetChanged();
+        updateListView();
+    }
+
     private void createNewList(String title) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
@@ -109,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
                 items.put(newListName, new ArrayList<String>());
                 currentlySelectedList = newListName;
                 System.out.println("createNewList [][][] items: " + items.toString());
-                showList();
+                updateListView();
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -134,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
                 if (items.size() > 1) {
                     items.remove(currentlySelectedList);
                     currentlySelectedList = getFirstListName();
-                    showList();
+                    updateListView();
                 } else {
 //                    Toast.makeText(getApplicationContext(), "You only have one list! You can't remove your only list", Toast.LENGTH_LONG).show();
                     items.remove(currentlySelectedList);
@@ -194,41 +281,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 currentlySelectedList = (String) items.keySet().toArray()[which];
                 setTitle(currentlySelectedList);
-                showList();
+                updateListView();
                 System.out.println("selectList [][][] items: " + items.toString());
             }
         });
         builder.show();
     }
 
-    private void showList() {
-        // Get reference of widgets from XML layout
-        productInput = findViewById(R.id.editText);
-        addButton = findViewById(R.id.button);
-        ListView listView = findViewById(R.id.shopping_list);
-        setTitle(currentlySelectedList);
-
-
-        // Create an ArrayAdapter from List
-        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
-        final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
-        listView.setAdapter(adapter);
-
-
-        addButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                item = productInput.getText().toString();
-                List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
-                ls.add(item);
-                items.put(currentlySelectedList, ls);
-                adapter.notifyDataSetChanged();
-                productInput.setText("");
-                showList();
-                System.out.println("showList [][][] items: " + items.toString());
-            }
-        });
-    }
 
     private String getFirstListName() {
         return (String) items.keySet().toArray()[0];
@@ -242,10 +301,8 @@ public class MainActivity extends AppCompatActivity {
     private void parseJsonResult(String res) {
         try {
             JSONArray arr = new JSONArray(res);
-//            System.out.println("JSONObject: " + obj);
-//            JSONArray arr = obj.getJSONObject("response").getJSONArray("Message");
             for (int i = 0; i < arr.length(); i++)
-                System.out.println(arr.getJSONObject(i).get("username"));
+                addItemToList(arr.getJSONObject(i).get("username").toString());
         } catch (JSONException e){
             e.printStackTrace();
         }
