@@ -9,7 +9,7 @@
                 "https://images.barcodelookup.com/5219/52194594-1.jpg",
                 "https://images.barcodelookup.com/5219/52194594-2.jpg",
                 "https://images.barcodelookup.com/5219/52194594-3.jpg"
-            ],
+            ]
   },
   {
     "barcode_number": "456734871425",
@@ -21,7 +21,7 @@
                 "https://images.barcodelookup.com/5219/52194594-1.jpg",
                 "https://images.barcodelookup.com/5219/52194594-2.jpg",
                 "https://images.barcodelookup.com/5219/52194594-3.jpg"
-            ],
+            ]
   },
   {
     "barcode_number": "316546874674",
@@ -33,5 +33,6 @@
                 "https://images.barcodelookup.com/5219/52194594-1.jpg",
                 "https://images.barcodelookup.com/5219/52194594-2.jpg",
                 "https://images.barcodelookup.com/5219/52194594-3.jpg"
-            ],
-  },
+            ]
+  }
+]
