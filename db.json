@@ -1,0 +1,37 @@
+[
+  {
+    "barcode_number": "886736874135",
+    "product_name": "Beer",
+    "brand": "Jupiler",
+    "description": "One of a kind, Jupiler beer that is great for drinking, chugging and passing out.",
+    "size": "25cl",
+    "images": [
+                "https://images.barcodelookup.com/5219/52194594-1.jpg",
+                "https://images.barcodelookup.com/5219/52194594-2.jpg",
+                "https://images.barcodelookup.com/5219/52194594-3.jpg"
+            ],
+  },
+  {
+    "barcode_number": "456734871425",
+    "product_name": "Fristi",
+    "brand": "Campina",
+    "description": "One of a kind, Fristi that is great for drinking, chugging and passing out.",
+    "size": "25cl",
+    "images": [
+                "https://images.barcodelookup.com/5219/52194594-1.jpg",
+                "https://images.barcodelookup.com/5219/52194594-2.jpg",
+                "https://images.barcodelookup.com/5219/52194594-3.jpg"
+            ],
+  },
+  {
+    "barcode_number": "316546874674",
+    "product_name": "Water",
+    "brand": "Evian",
+    "description": "One of a kind, Evian water that is great for drinking, chugging and passing out.",
+    "size": "100cl",
+    "images": [
+                "https://images.barcodelookup.com/5219/52194594-1.jpg",
+                "https://images.barcodelookup.com/5219/52194594-2.jpg",
+                "https://images.barcodelookup.com/5219/52194594-3.jpg"
+            ],
+  },

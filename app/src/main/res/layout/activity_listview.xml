@@ -1,10 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--  Single List Item Design -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/label"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:padding="10dip"
-    android:textSize="16dip"
-    android:textStyle="bold" >
-</TextView>
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:orientation="vertical"-->
+<!--    android:paddingBottom="7.5dp"-->
+<!--    android:paddingLeft="15dp"-->
+<!--    android:paddingRight="15dp"-->
+<!--    android:paddingTop="7.5dp">-->
+
+<!--    <TextView xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--        android:id="@+id/label"-->
+<!--        android:layout_width="fill_parent"-->
+<!--        android:layout_height="fill_parent"-->
+<!--        android:padding="10dip"-->
+<!--        android:textSize="16dip"-->
+<!--        android:textStyle="bold" >-->
+<!--    </TextView>-->
+<!--    <Button-->
+<!--    android:id="@+id/btnAction"-->
+<!--    android:layout_width="wrap_content"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:layout_gravity="right"-->
+<!--    android:text="Click Me" />-->
+<!--</LinearLayout>-->
+
+
+<!--<TextView xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:id="@+id/label"-->
+<!--    android:layout_width="fill_parent"-->
+<!--    android:layout_height="fill_parent"-->
+<!--    android:padding="10dip"-->
+<!--    android:textSize="16dip"-->
+<!--    android:textStyle="bold" >-->
+<!--</TextView>-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingLeft="15dp"
+    android:paddingTop="7.5dp"
+    android:paddingRight="15dp"
+    android:paddingBottom="7.5dp">
+
+    <TextView
+        android:id="@android:id/text1"
+        android:layout_width="287dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:padding="10dip"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall" />
+
+    <Button
+        android:id="@+id/btnAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Click Me" />
+
+</LinearLayout>

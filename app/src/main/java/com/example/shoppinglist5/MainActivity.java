@@ -19,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.NumberPicker;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     Button addButton;
     ListView listView;
     HashMap<String, List<String>> items = new HashMap<>();
+    HashMap<String, List<String>> itemDetails = new HashMap<>();
 
 
     @Override
@@ -107,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
         List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
         final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
         listView.setAdapter(adapter);
+        setTitle(currentlySelectedList);
 
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -156,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
                         items.put(currentlySelectedList, ls);
                         updateListView();
                         break;
+                    case R.id.quantity:
+                        showNumberPicker(position);
                     default:
                         break;
                 }
@@ -165,6 +170,22 @@ public class MainActivity extends AppCompatActivity {
         popup.inflate(R.menu.popup);
         popup.show();
         return false;
+    }
+
+    private void showNumberPicker(final Integer item) { // source: https://www.zoftino.com/android-numberpicker-dialog-example
+
+        NumberPickerDialog np = new NumberPickerDialog();
+        np.setValueChangeListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                setQuantity(item, picker.getValue());
+            }
+        });
+        np.show(getSupportFragmentManager(), "Quantity picker");
+    }
+
+    private void setQuantity(Integer idx, Integer q) {
+
     }
 
     private void addItemToList(String item) {
@@ -227,7 +248,6 @@ public class MainActivity extends AppCompatActivity {
                     items.remove(currentlySelectedList);
                     createNewList("This was your only list, create a new one?");
                 }
-                System.out.println("removeList [][][] items: " + items.toString());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
