@@ -35,7 +35,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -47,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     Button addButton;
     ListView listView;
     HashMap<String, List<String>> items = new HashMap<>();
-    HashMap<String, List<String>> itemDetails = new HashMap<>();
+    HashMap<String, JSONObject> itemDetails = new HashMap<>();
 
 
     @Override
@@ -106,7 +109,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateListView() {
         // Create an ArrayAdapter from List
-        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
+        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : new ArrayList<>(items.get(currentlySelectedList));
+        System.out.println("~!~ ls: " + ls);
+        System.out.println("~!~ items: " + items);
+        for (int i = 0; i < ls.size(); i++) {
+            try {
+                Integer q = (Integer) itemDetails.get(ls.get(i)).get("size");
+                if (q > 1) ls.set(i, q.toString() + " " + ls.get(i));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
         final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
         listView.setAdapter(adapter);
         setTitle(currentlySelectedList);
@@ -115,9 +128,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 item = productInput.getText().toString();
-                List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
-                ls.add(item);
-                items.put(currentlySelectedList, ls);
+                addItemToList(item, "Manual entry");
                 adapter.notifyDataSetChanged();
                 productInput.setText("");
                 System.out.println("updateListView [][][] items: " + items.toString());
@@ -141,9 +152,13 @@ public class MainActivity extends AppCompatActivity {
                 switch (item.getItemId()) {
                     case R.id.details:
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        builder.setTitle(items.get(currentlySelectedList).get(position));
-                        builder.setMessage("item details...\nDate added:\nOrigin:\n");
-
+                        String product = items.get(currentlySelectedList).get(position);
+                        builder.setTitle(product);
+                        try {
+                            builder.setMessage(buildItemDetailsString(product));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         builder.setPositiveButton("Back", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -172,6 +187,11 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    private String buildItemDetailsString(String product) throws JSONException {
+        JSONObject ji = itemDetails.get(product);
+        return "Date added: " + ji.get("date_added") + "\nOrigin: " + ji.get("origin") + "\n";
+    }
+
     private void showNumberPicker(final Integer item) { // source: https://www.zoftino.com/android-numberpicker-dialog-example
 
         NumberPickerDialog np = new NumberPickerDialog();
@@ -185,20 +205,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setQuantity(Integer idx, Integer q) {
-
-    }
-
-    private void addItemToList(String item) {
-        // Create an ArrayAdapter from List
-        List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : items.get(currentlySelectedList);
-        final ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, ls);
-        listView.setAdapter(adapter);
-
-        ls.add(item);
-        items.put(currentlySelectedList, ls);
-        adapter.notifyDataSetChanged();
+        String item = items.get(currentlySelectedList).get(idx);
+        JSONObject details = itemDetails.get(item);
+        try {
+            details.put("size", q);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         updateListView();
     }
+
+    private void addItemToList(String item, String origin) {
+        List<String> ls = items.get(currentlySelectedList);
+        try {
+            if ((ls != null) && ls.contains(item)) {
+                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("size") + 1); // buggy when same item is on different lists
+            } else {
+                ls.add(item);
+                items.put(currentlySelectedList, ls);
+                JSONObject sd = new JSONObject();
+                JSONObject td = new JSONObject();
+                JSONObject od = new JSONObject();
+                sd.put("size", 1);
+                td.put("date_added", getTime());
+                td.put("origin", origin);
+                itemDetails.put(item, sd);
+                itemDetails.put(item, td);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        updateListView();
+    }
+
 
     private void createNewList(String title) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -216,7 +255,6 @@ public class MainActivity extends AppCompatActivity {
                 String newListName = input.getText().toString();
                 items.put(newListName, new ArrayList<String>());
                 currentlySelectedList = newListName;
-                System.out.println("createNewList [][][] items: " + items.toString());
                 updateListView();
             }
         });
@@ -244,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
                     currentlySelectedList = getFirstListName();
                     updateListView();
                 } else {
-//                    Toast.makeText(getApplicationContext(), "You only have one list! You can't remove your only list", Toast.LENGTH_LONG).show();
                     items.remove(currentlySelectedList);
                     createNewList("This was your only list, create a new one?");
                 }
@@ -279,7 +316,6 @@ public class MainActivity extends AppCompatActivity {
                 items.remove(currentlySelectedList);
                 currentlySelectedList = newName;
                 setTitle(newName);
-                System.out.println("renameShoppingList [][][] items: " + items.toString());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -302,7 +338,6 @@ public class MainActivity extends AppCompatActivity {
                 currentlySelectedList = (String) items.keySet().toArray()[which];
                 setTitle(currentlySelectedList);
                 updateListView();
-                System.out.println("selectList [][][] items: " + items.toString());
             }
         });
         builder.show();
@@ -313,16 +348,24 @@ public class MainActivity extends AppCompatActivity {
         return (String) items.keySet().toArray()[0];
     }
 
+    private String getTime() {
+        SimpleDateFormat formatter= new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+        Date date = new Date(System.currentTimeMillis());
+        return formatter.format(date);
+    }
+
 
     private void fetchFromServer() {
-        new JsonTask().execute("https://jsonplaceholder.typicode.com/users/"); // TODO
+        new JsonTask().execute("https://jsonplaceholder.typicode.com/users"); // TODO
     }
 
     private void parseJsonResult(String res) {
         try {
             JSONArray arr = new JSONArray(res);
-            for (int i = 0; i < arr.length(); i++)
-                addItemToList(arr.getJSONObject(i).get("username").toString()); // TODO
+            for (int i = 0; i < arr.length(); i++) {
+                String item = arr.getJSONObject(i).get("username").toString();
+                addItemToList(item, "Fetched from server");
+            }
         } catch (JSONException e){
             e.printStackTrace();
         }
@@ -357,7 +400,7 @@ public class MainActivity extends AppCompatActivity {
                 reader = new BufferedReader(new InputStreamReader(stream));
 
                 StringBuffer buffer = new StringBuffer();
-                String line = "";
+                String line;
 
                 while ((line = reader.readLine()) != null) {
                     buffer.append(line+"\n");
