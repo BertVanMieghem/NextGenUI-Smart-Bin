@@ -1,15 +1,11 @@
 package com.example.shoppinglist5;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -21,22 +17,22 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupMenu;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import org.json.*;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         productInput = findViewById(R.id.editText);
         addButton = findViewById(R.id.button);
         listView = findViewById(R.id.shopping_list);
-        items.put("Shopping list 1", new ArrayList<String>());
+        items.put("Shopping list", new ArrayList<String>());
         currentlySelectedList = getFirstListName();
         setTitle(currentlySelectedList);
 
@@ -112,9 +108,10 @@ public class MainActivity extends AppCompatActivity {
         List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : new ArrayList<>(items.get(currentlySelectedList));
         System.out.println("~!~ ls: " + ls);
         System.out.println("~!~ items: " + items);
+        System.out.println("~!~ itemdetails: " + itemDetails);
         for (int i = 0; i < ls.size(); i++) {
             try {
-                Integer q = (Integer) itemDetails.get(ls.get(i)).get("size");
+                Integer q = (Integer) itemDetails.get(ls.get(i)).get("amount");
                 if (q > 1) ls.set(i, q.toString() + " " + ls.get(i));
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -128,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 item = productInput.getText().toString();
-                addItemToList(item, "Manual entry");
+                addItemToList(item);
                 adapter.notifyDataSetChanged();
                 productInput.setText("");
                 System.out.println("updateListView [][][] items: " + items.toString());
@@ -189,7 +186,18 @@ public class MainActivity extends AppCompatActivity {
 
     private String buildItemDetailsString(String product) throws JSONException {
         JSONObject ji = itemDetails.get(product);
-        return "Date added: " + ji.get("date_added") + "\nOrigin: " + ji.get("origin") + "\n";
+        if (ji.get("origin") == "Manual entry")
+            return "Date added: " + ji.get("date_added") + "\n" + "Origin: " + ji.get("origin") + "\n";
+        if (ji.get("origin") == "Fetched from server")
+            return "Date added: " + ji.get("date_added") + "\n" +
+                    "Origin: " + ji.get("origin") + "\n" +
+                    "Barcode: " + ji.get("barcode") + "\n" +
+                    "Description: " + ji.get("description") + "\n" +
+                    "Manufacturer: " + ji.get("manufacturer") + "\n" +
+                    "Size: " + ji.get("size") + "\n" +
+                    "Brand: " + ji.get("brand") + "\n" +
+                    "Status: " + ji.get("status");
+        return "";
     }
 
     private void showNumberPicker(final Integer item) { // source: https://www.zoftino.com/android-numberpicker-dialog-example
@@ -208,29 +216,53 @@ public class MainActivity extends AppCompatActivity {
         String item = items.get(currentlySelectedList).get(idx);
         JSONObject details = itemDetails.get(item);
         try {
-            details.put("size", q);
+            details.put("amount", q);
         } catch (JSONException e) {
             e.printStackTrace();
         }
         updateListView();
     }
 
-    private void addItemToList(String item, String origin) {
+    private void addItemToList(String item, String barcode, String description, String manufacturer, String image, String size, String brand, Integer status,Integer amount) {
         List<String> ls = items.get(currentlySelectedList);
         try {
             if ((ls != null) && ls.contains(item)) {
-                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("size") + 1); // buggy when same item is on different lists
+                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("amount") + amount); // buggy when same item is on different lists
             } else {
                 ls.add(item);
                 items.put(currentlySelectedList, ls);
-                JSONObject sd = new JSONObject();
-                JSONObject td = new JSONObject();
-                JSONObject od = new JSONObject();
-                sd.put("size", 1);
-                td.put("date_added", getTime());
-                td.put("origin", origin);
-                itemDetails.put(item, sd);
-                itemDetails.put(item, td);
+                JSONObject ed = new JSONObject();
+                ed.put("barcode", barcode);
+                ed.put("date_added", getTime());
+                ed.put("origin", "Fetched from server");
+                ed.put("description", description);
+                ed.put("manufacturer", manufacturer);
+                ed.put("image", image);
+                ed.put("size", size);
+                ed.put("brand", brand);
+                ed.put("status", status);
+                ed.put("amount", amount);
+                itemDetails.put(item, ed);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        updateListView();
+    }
+
+    private void addItemToList(String item) {
+        List<String> ls = items.get(currentlySelectedList);
+        try {
+            if ((ls != null) && ls.contains(item)) {
+                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("amount") + 1); // buggy when same item is on different lists
+            } else {
+                ls.add(item);
+                items.put(currentlySelectedList, ls);
+                JSONObject ed = new JSONObject();
+                ed.put("date_added", getTime());
+                ed.put("origin", "Manual entry");
+                ed.put("amount", 1);
+                itemDetails.put(item, ed);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -356,15 +388,23 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void fetchFromServer() {
-        new JsonTask().execute("https://jsonplaceholder.typicode.com/users"); // TODO
+        new JsonTask().execute("https://api.myjson.com/bins/13w4sq");
     }
 
     private void parseJsonResult(String res) {
         try {
             JSONArray arr = new JSONArray(res);
             for (int i = 0; i < arr.length(); i++) {
-                String item = arr.getJSONObject(i).get("username").toString();
-                addItemToList(item, "Fetched from server");
+                String item = arr.getJSONObject(i).get("name").toString();
+                String barcode = arr.getJSONObject(i).get("barcode").toString();
+                String description = arr.getJSONObject(i).get("description").toString();
+                String manufacturer = arr.getJSONObject(i).get("manufacturer").toString();
+                String image = arr.getJSONObject(i).get("image").toString();
+                String size = arr.getJSONObject(i).get("size").toString();
+                String brand = arr.getJSONObject(i).get("brand").toString();
+                Integer status = (Integer) arr.getJSONObject(i).get("status");
+                Integer amount = (Integer) arr.getJSONObject(i).get("amount");
+                addItemToList(item, barcode, description, manufacturer, image, size, brand, status, amount);
             }
         } catch (JSONException e){
             e.printStackTrace();
@@ -428,6 +468,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             return null;
+
         }
 
         @Override
