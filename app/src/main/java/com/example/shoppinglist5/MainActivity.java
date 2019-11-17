@@ -388,7 +388,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void fetchFromServer() {
-        new JsonTask().execute("https://api.myjson.com/bins/13w4sq");
+        new JsonTask().execute("http://52.91.230.14:3000/fetch");
     }
 
     private void parseJsonResult(String res) {
