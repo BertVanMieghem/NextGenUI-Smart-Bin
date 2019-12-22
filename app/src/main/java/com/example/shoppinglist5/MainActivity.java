@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,9 +27,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -37,6 +40,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+
+import static java.lang.Integer.parseInt;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -103,15 +108,14 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    // called every time the shopping list is updated
     private void updateListView() {
         // Create an ArrayAdapter from List
         List<String> ls = (items.get(currentlySelectedList) == null) ? new ArrayList<String>() : new ArrayList<>(items.get(currentlySelectedList));
-        System.out.println("~!~ ls: " + ls);
-        System.out.println("~!~ items: " + items);
-        System.out.println("~!~ itemdetails: " + itemDetails);
         for (int i = 0; i < ls.size(); i++) {
             try {
-                Integer q = (Integer) itemDetails.get(ls.get(i)).get("amount");
+                String qString = (String) itemDetails.get(ls.get(i)).get("amount");
+                Integer q = parseInt(qString);
                 if (q > 1) ls.set(i, q.toString() + " " + ls.get(i));
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -140,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Hold an item to show pop up menu with options: details, delete, and set quantity
     private boolean showPopup(View view, final int position) {
         PopupMenu popup = new PopupMenu(MainActivity.this, view);
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -184,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    // create json with all item details
     private String buildItemDetailsString(String product) throws JSONException {
         JSONObject ji = itemDetails.get(product);
         if (ji.get("origin") == "Manual entry")
@@ -200,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
         return "";
     }
 
+    // display the menu to set a quantity for a specific item
     private void showNumberPicker(final Integer item) { // source: https://www.zoftino.com/android-numberpicker-dialog-example
 
         NumberPickerDialog np = new NumberPickerDialog();
@@ -212,22 +219,24 @@ public class MainActivity extends AppCompatActivity {
         np.show(getSupportFragmentManager(), "Quantity picker");
     }
 
+    // modify the quantity of a specific item
     private void setQuantity(Integer idx, Integer q) {
         String item = items.get(currentlySelectedList).get(idx);
         JSONObject details = itemDetails.get(item);
         try {
-            details.put("amount", q);
+            details.put("amount", q.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
         updateListView();
     }
 
-    private void addItemToList(String item, String barcode, String description, String manufacturer, String image, String size, String brand, Integer status,Integer amount) {
+    // add an item that was received from the server to the shopping list
+    private void addItemToList(String item, String barcode, String description, String manufacturer, String image, String size, String brand, String status,String amount) {
         List<String> ls = items.get(currentlySelectedList);
         try {
             if ((ls != null) && ls.contains(item)) {
-                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("amount") + amount); // buggy when same item is on different lists
+                setQuantity(ls.indexOf(item), parseInt((String) itemDetails.get(item).get("amount")) + parseInt(amount)); // buggy when same item is on different lists
             } else {
                 ls.add(item);
                 items.put(currentlySelectedList, ls);
@@ -250,19 +259,22 @@ public class MainActivity extends AppCompatActivity {
         updateListView();
     }
 
+    // add an item that was manually added to the shopping list
     private void addItemToList(String item) {
         List<String> ls = items.get(currentlySelectedList);
         try {
             if ((ls != null) && ls.contains(item)) {
-                setQuantity(ls.indexOf(item), (Integer) itemDetails.get(item).get("amount") + 1); // buggy when same item is on different lists
+                setQuantity(ls.indexOf(item), parseInt((String) itemDetails.get(item).get("amount")) + 1); // buggy when same item is on different lists
             } else {
                 ls.add(item);
                 items.put(currentlySelectedList, ls);
                 JSONObject ed = new JSONObject();
                 ed.put("date_added", getTime());
                 ed.put("origin", "Manual entry");
-                ed.put("amount", 1);
+                ed.put("amount", "1");
                 itemDetails.put(item, ed);
+                JSONObject pd = buildJSONforPost(item);
+                postToServer(pd.toString());
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -270,7 +282,23 @@ public class MainActivity extends AppCompatActivity {
         updateListView();
     }
 
+    // for a manually added product, create a json with information that the server expects
+    private JSONObject buildJSONforPost(String name) {
+        try {
+            JSONObject pd = new JSONObject();
+            pd.put("barcode", "1");
+            pd.put("name", name);
+            pd.put("description", "manual entry");
+            pd.put("amount", 1);
+            System.out.println(pd);
+            return pd;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
+    // create new shopping list and add to hashmap
     private void createNewList(String title) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
@@ -300,6 +328,7 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
+    // remove lsit from hashmap
     private void removeList() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Delete " + currentlySelectedList + "?");
@@ -329,17 +358,16 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
+    // rename an entry in the hashmap
     private void renameShoppingList() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose a new name");
 
-        // Set up the input
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        // Set up the buttons
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -360,6 +388,7 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
+    // from the overview of shopping lists, display the selected shopping list
     private void selectList() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select a shopping list");
@@ -376,6 +405,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // when the application is started, this function is used to set current shopping list to the first one in the hashmap
     private String getFirstListName() {
         return (String) items.keySet().toArray()[0];
     }
@@ -390,29 +420,77 @@ public class MainActivity extends AppCompatActivity {
     private void fetchFromServer() {
         new JsonTask().execute("http://52.91.230.14:3000/fetch");
     }
+    private void postToServer(String params) { new CallAPI().execute("http://52.91.230.14:3000/create", params); }
 
+
+    // parse json fetched from server
     private void parseJsonResult(String res) {
-        try {
-            JSONArray arr = new JSONArray(res);
-            for (int i = 0; i < arr.length(); i++) {
-                String item = arr.getJSONObject(i).get("name").toString();
-                String barcode = arr.getJSONObject(i).get("barcode").toString();
-                String description = arr.getJSONObject(i).get("description").toString();
-                String manufacturer = arr.getJSONObject(i).get("manufacturer").toString();
-                String image = arr.getJSONObject(i).get("image").toString();
-                String size = arr.getJSONObject(i).get("size").toString();
-                String brand = arr.getJSONObject(i).get("brand").toString();
-                Integer status = (Integer) arr.getJSONObject(i).get("status");
-                Integer amount = (Integer) arr.getJSONObject(i).get("amount");
-                addItemToList(item, barcode, description, manufacturer, image, size, brand, status, amount);
+        if (res != null) {
+            try {
+                JSONArray arr = new JSONArray(res);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject o = arr.getJSONObject(i);
+                    String item = o.get("name").toString();
+                    String barcode = o.get("barcode").toString();
+                    String description = o.get("description").toString();
+                    String manufacturer = o.get("manufacturer").toString();
+                    String image = o.get("image").toString();
+                    String size = o.get("size").toString();
+                    String brand = o.get("brand").toString();
+                    String status = o.get("status").toString();
+                    String amount = o.get("amount").toString();
+                    addItemToList(item, barcode, description, manufacturer, image, size, brand, status, amount);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        } catch (JSONException e){
-            e.printStackTrace();
+        } else Toast.makeText(getApplicationContext(),"Data fetch failed, please try again.", Toast.LENGTH_SHORT).show();
+    }
+
+    // post json to the server
+    public class CallAPI extends AsyncTask<String, String, String> { // source: https://stackoverflow.com/questions/42767249/android-post-request-with-json
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            String urlString = params[0]; // URL to call
+            String data = params[1]; //data to post
+            OutputStream out = null;
+
+            try {
+                URL url = new URL(urlString);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty("Accept","application/json");
+                urlConnection.setDoOutput(true);
+                urlConnection.setDoInput(true);
+                urlConnection.connect();
+
+                DataOutputStream os = new DataOutputStream(urlConnection.getOutputStream());
+                os.writeBytes(data);
+                System.out.println("wrote to server: " + data);
+
+                os.flush();
+                os.close();
+
+                Log.i("STATUS", String.valueOf(urlConnection.getResponseCode()));
+                Log.i("MSG" , urlConnection.getResponseMessage());
+
+                urlConnection.disconnect();
+            } catch (Exception e) {
+                System.out.println("WRITE-TO-SERVER ERROR: " + e.getMessage());
+            }
+            return null;
         }
     }
 
 
-
+    // fetch json from server
     private class JsonTask extends AsyncTask<String, String, String> { // source: https://stackoverflow.com/questions/33229869/get-json-data-from-url-using-android
 
         ProgressDialog pd;
